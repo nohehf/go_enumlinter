@@ -142,12 +142,53 @@ func run(pass *analysis.Pass) (interface{}, error) {
 		return true
 	}
 
+	// Fifth pass: check variable declarations
+	inspectVars := func(node ast.Node) bool {
+		genDecl, ok := node.(*ast.GenDecl)
+		if !ok || genDecl.Tok != token.VAR {
+			return true
+		}
+
+		for _, spec := range genDecl.Specs {
+			valueSpec, ok := spec.(*ast.ValueSpec)
+			if !ok {
+				continue
+			}
+
+			// Check if this variable has a type annotation
+			if valueSpec.Type == nil {
+				continue
+			}
+
+			typeIdent, ok := valueSpec.Type.(*ast.Ident)
+			if !ok {
+				continue
+			}
+
+			// Check if the type is an enum type
+			enumValues, exists := enumTypes[typeIdent.Name]
+			if !exists || len(enumValues) == 0 {
+				continue
+			}
+
+			// Check each variable in this spec
+			for i, name := range valueSpec.Names {
+				// Check if there's a corresponding value
+				if i < len(valueSpec.Values) {
+					checkVariableValue(pass, valueSpec.Values[i], enumValues, typeIdent.Name, name.Name)
+				}
+			}
+		}
+		return true
+	}
+
 	// Run all inspections
 	for _, f := range pass.Files {
 		ast.Inspect(f, inspectTypes)
 		ast.Inspect(f, inspectConsts)
 		ast.Inspect(f, inspectFunctions)
 		ast.Inspect(f, inspectReturns)
+		ast.Inspect(f, inspectVars)
 	}
 
 	return nil, nil
@@ -163,5 +204,18 @@ func checkReturnValue(pass *analysis.Pass, result ast.Expr, enumValues map[strin
 	case *ast.BasicLit:
 		// Any literal (string, int, etc.) is not allowed for enum types
 		pass.Reportf(result.Pos(), "returning literal '%s' which is not a valid enum value for type %s", v.Value, enumTypeName)
+	}
+}
+
+func checkVariableValue(pass *analysis.Pass, value ast.Expr, enumValues map[string]bool, enumTypeName string, varName string) {
+	switch v := value.(type) {
+	case *ast.Ident:
+		// Check if it's a valid enum constant
+		if !enumValues[v.Name] {
+			pass.Reportf(value.Pos(), "variable '%s' assigned '%s' which is not a valid enum value for type %s", varName, v.Name, enumTypeName)
+		}
+	case *ast.BasicLit:
+		// Any literal (string, int, etc.) is not allowed for enum types
+		pass.Reportf(value.Pos(), "variable '%s' assigned literal '%s' which is not a valid enum value for type %s", varName, v.Value, enumTypeName)
 	}
 }

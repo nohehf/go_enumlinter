@@ -51,3 +51,24 @@ func getString() string {
 func getInt() int {
 	return 42
 }
+
+// Test variable declarations
+func testVariableDeclarations() {
+	// Valid variable declarations (no diagnostics expected)
+	var validStatus Status = StatusActive
+	var validPriority Priority = PriorityHigh
+
+	// Use the variables to avoid "declared and not used" errors
+	_ = validStatus
+	_ = validPriority
+
+	// Invalid variable declarations (should fail)
+	var invalidStatus Status = "random string" // want "variable 'invalidStatus' assigned literal '\"random string\"' which is not a valid enum value for type Status"
+	var invalidPriority Priority = 42          // want "variable 'invalidPriority' assigned literal '42' which is not a valid enum value for type Priority"
+	var invalidEnum Status = "SomeOtherValue"  // want "variable 'invalidEnum' assigned literal '\"SomeOtherValue\"' which is not a valid enum value for type Status"
+
+	// Use the invalid variables to avoid "declared and not used" errors
+	_ = invalidStatus
+	_ = invalidPriority
+	_ = invalidEnum
+}

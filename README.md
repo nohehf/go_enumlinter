@@ -17,6 +17,8 @@ const (
 func getStatus() StatusEnum {
     return StatusActive  // ✅ Valid - returns enum constant
 }
+
+var validStatus StatusEnum = StatusActive  // ✅ Valid - variable assigned enum constant
 ```
 
 #### Invalid Enum Usage ❌
@@ -32,6 +34,8 @@ const (
 func getStatus() StatusEnum {
     return "invalid"  // ❌ Error - returns string literal
 }
+
+var invalidStatus StatusEnum = "random string"  // ❌ Error - variable assigned string literal
 ```
 
 ## Features
@@ -39,6 +43,7 @@ func getStatus() StatusEnum {
 - **Enum Detection**: Automatically identifies types that have constants defined for them
 - **Multi-type Support**: Works with string, int, float, bool, and iota-based enums
 - **Return Validation**: Ensures only valid enum constants are returned from functions
+- **Variable Declaration Validation**: Ensures only valid enum constants are assigned to variables
 - **Comprehensive Testing**: Full test suite using Go's native testing framework
 
 ## Installation
@@ -93,11 +98,15 @@ go test -v -run TestEnumLinter
 - **Bool-based**: `type Flag bool`
 - **Iota-based**: `type Color int` with `iota`
 
-## TODO
+## Error Messages
 
-Handle a variable being initialized :
-```go
-var test StatusEnum = "random string" // sadly still works for now ;-;
+The linter provides clear error messages:
+
+```
+returning literal '"invalid_status"' which is not a valid enum value for type Status
+variable 'invalidStatus' assigned literal '"random string"' which is not a valid enum value for type Status
+returning literal '999' which is not a valid enum value for type Priority
+variable 'invalidPriority' assigned literal '42' which is not a valid enum value for type Priority
 ```
 
 ## Development
@@ -113,7 +122,8 @@ var test StatusEnum = "random string" // sadly still works for now ;-;
 The core logic is in `pkg/analyzer/analyzer.go`. The analyzer:
 1. Detects enum types by finding types with constants
 2. Validates return statements against enum constants
-3. Reports violations with clear error messages
+3. Validates variable declarations against enum constants
+4. Reports violations with clear error messages
 
 ## License
 

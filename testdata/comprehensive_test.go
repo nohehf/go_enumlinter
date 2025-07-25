@@ -78,3 +78,26 @@ func testMultipleReturnsInvalid() Status {
 func getInvalidEnumConstant2() Priority {
 	return 42 // want "returning literal '42' which is not a valid enum value for type Priority"
 }
+
+// Test variable declarations with different enum types
+func testVariableDeclarationsComprehensive() {
+	// Valid variable declarations (no diagnostics expected)
+	var validScore Score = ScoreExcellent
+	var validFlag Flag = FlagEnabled
+	var validColor Color = ColorRed
+
+	// Use variables to avoid "declared and not used" errors
+	_ = validScore
+	_ = validFlag
+	_ = validColor
+
+	// Invalid variable declarations (should fail)
+	var invalidScore Score = 1.0 // want "variable 'invalidScore' assigned literal '1.0' which is not a valid enum value for type Score"
+	var invalidFlag Flag = true  // want "variable 'invalidFlag' assigned 'true' which is not a valid enum value for type Flag"
+	var invalidColor Color = 5   // want "variable 'invalidColor' assigned literal '5' which is not a valid enum value for type Color"
+
+	// Use invalid variables to avoid "declared and not used" errors
+	_ = invalidScore
+	_ = invalidFlag
+	_ = invalidColor
+}
