@@ -14,7 +14,7 @@ const (
     StatusInactive StatusEnum = "inactive"
 )
 
-func getStatus() Status {
+func getStatus() StatusEnum {
     return StatusActive  // ✅ Valid - returns enum constant
 }
 ```
@@ -67,7 +67,6 @@ go build -o enumlinter cmd/main.go
 ./enumlinter ./path/to/directory
 ```
 
-
 ## Testing
 
 ### Run All Tests
@@ -94,14 +93,11 @@ go test -v -run TestEnumLinter
 - **Bool-based**: `type Flag bool`
 - **Iota-based**: `type Color int` with `iota`
 
-## Error Messages
+## TODO
 
-The linter provides clear error messages:
-
-```
-returning literal '"invalid_status"' which is not a valid enum value for type Status
-returning literal '999' which is not a valid enum value for type Priority
-returning 'true' which is not a valid enum value for type Flag
+Handle a variable being initialized :
+```go
+var test StatusEnum = "random string" // sadly still works for now ;-;
 ```
 
 ## Development
