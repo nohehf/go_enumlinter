@@ -98,17 +98,6 @@ go test -v -run TestEnumLinter
 - **Bool-based**: `type Flag bool`
 - **Iota-based**: `type Color int` with `iota`
 
-## Error Messages
-
-The linter provides clear error messages:
-
-```
-returning literal '"invalid_status"' which is not a valid enum value for type Status
-variable 'invalidStatus' assigned literal '"random string"' which is not a valid enum value for type Status
-returning literal '999' which is not a valid enum value for type Priority
-variable 'invalidPriority' assigned literal '42' which is not a valid enum value for type Priority
-```
-
 ## Development
 
 ### Adding New Test Cases
