@@ -121,4 +121,4 @@ The core logic is in `pkg/analyzer/analyzer.go`. The analyzer:
 
 ## License
 
-[Add your license here]
+MIT License
