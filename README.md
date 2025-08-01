@@ -1,10 +1,10 @@
-# Enum Linter
+# gostrictenum
 
 A Go static analysis tool that ensures only valid enum values are returned for enum types.
 
-### Examples
+## Examples
 
-#### Valid Enum Usage ✅
+### Valid Enum Usage ✅
 
 ```go
 type StatusEnum string
@@ -21,7 +21,7 @@ func getStatus() StatusEnum {
 var validStatus StatusEnum = StatusActive  // ✅ Valid - variable assigned enum constant
 ```
 
-#### Invalid Enum Usage ❌
+### Invalid Enum Usage ❌
 
 ```go
 type StatusEnum string
@@ -109,6 +109,7 @@ go test -v -run TestEnumLinter
 ### Extending the Linter
 
 The core logic is in `pkg/analyzer/analyzer.go`. The analyzer:
+
 1. Detects enum types by finding types with constants
 2. Validates return statements against enum constants
 3. Validates variable declarations against enum constants
