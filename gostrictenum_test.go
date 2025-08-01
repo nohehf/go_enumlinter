@@ -6,6 +6,7 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
+// Example: https://github.com/bflad/tfproviderlint/tree/main/passes/S037
 func TestEnumLinter(t *testing.T) {
 	testdata := analysistest.TestData()
 
