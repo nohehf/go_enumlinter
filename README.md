@@ -46,7 +46,47 @@ var invalidStatus StatusEnum = "random string"  // ❌ Error - variable assigned
 - **Variable Declaration Validation**: Ensures only valid enum constants are assigned to variables
 - **Comprehensive Testing**: Full test suite using Go's native testing framework
 
-## Installation
+## Golangci-lint custom plugin module
+
+Create a `.custom-gcl.yml`:
+
+```yaml
+version: v2.3.0
+plugins:
+  - module: 'github.com/0ri0nexe/gostrictenum'
+    version: 'c152c7fddc953d81e23ae90e5d9c12ed80ea6004' # last commit sha
+```
+
+Build your custom golangci-lint, and set it as alias:
+
+```sh
+golangci-lint custom -v
+alias golangci-lint = "./custom-gcl"
+```
+
+You can now run your custom golangci-lint.
+
+Add the linter to your `.golangci.yml`:
+
+```yaml
+version: '2'
+linters:
+  # ....
+  enable:
+    # ...
+    - gostrictenum
+  settings:
+    # ...
+    custom:
+      gostrictenum:
+        type: 'module'
+        description: Custom linter to validate strict enum usage
+    # ...
+```
+
+More info about custom module plugins: <https://golangci-lint.run/plugins/module-plugins/>
+
+## Manual Installation
 
 ```bash
 # Clone the repository
@@ -57,7 +97,7 @@ cd go_linter
 go build -o enumlinter cmd/main.go
 ```
 
-## Usage
+### Usage
 
 ### Command Line
 
