@@ -1,19 +1,55 @@
-package analyzer
+package gostrictenum
 
 import (
 	"go/ast"
 	"go/token"
 
+	"github.com/golangci/plugin-module-register/register"
 	"golang.org/x/tools/go/analysis"
 )
 
-var Analyzer = &analysis.Analyzer{
-	Name: "enumlinter",
-	Doc:  "Vérifie que seules les valeurs d'énumération sont retournées pour les types d'énumération",
-	Run:  run,
+type Settings struct{}
+
+type GoStrictEnumLinter struct {
+	settings Settings
 }
 
-func run(pass *analysis.Pass) (interface{}, error) {
+func init() {
+	register.Plugin("gostrictenum", New)
+}
+
+// https://github.com/golangci/example-plugin-module-linter/blob/main/example.go
+func New(settings any) (register.LinterPlugin, error) {
+	// The configuration type will be map[string]any or []interface, it depends on your configuration.
+	// You can use https://github.com/go-viper/mapstructure to convert map to struct.
+
+	s, err := register.DecodeSettings[Settings](settings)
+	if err != nil {
+		return nil, err
+	}
+
+	return &GoStrictEnumLinter{settings: s}, nil
+}
+
+func (l *GoStrictEnumLinter) BuildAnalyzers() ([]*analysis.Analyzer, error) {
+	return []*analysis.Analyzer{
+		{
+			Name: "gostrictenum",
+			Doc:  "Check that only enum values are returned for enum types",
+			Run:  l.run,
+		},
+	}, nil
+}
+
+func (l *GoStrictEnumLinter) GetLoadMode() string {
+	// NOTE: the mode can be `register.LoadModeSyntax` or `register.LoadModeTypesInfo`.
+	// - `register.LoadModeSyntax`: if the linter doesn't use types information.
+	// - `register.LoadModeTypesInfo`: if the linter uses types information.
+
+	return register.LoadModeSyntax
+}
+
+func (f *GoStrictEnumLinter) run(pass *analysis.Pass) (interface{}, error) {
 	// First pass: collect all type declarations
 	typeDecls := make(map[string]*ast.TypeSpec)
 

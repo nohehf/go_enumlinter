@@ -1,4 +1,4 @@
-package analyzer
+package gostrictenum
 
 import (
 	"os"
@@ -43,5 +43,10 @@ func TestEnumLinter(t *testing.T) {
 	}
 
 	// Use the analysistest package to test our analyzer
-	analysistest.Run(t, testdata, Analyzer, "enumlinter")
+	linter := GoStrictEnumLinter{}
+	analyzers, err := linter.BuildAnalyzers()
+	if err != nil {
+		t.Fatal(err)
+	}
+	analysistest.Run(t, testdata, analyzers[0])
 }
