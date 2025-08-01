@@ -158,49 +158,9 @@ func (f *GoStrictEnumLinter) run(pass *analysis.Pass) (interface{}, error) {
 			return true
 		}
 
-		// Build a list of return types to match with return values by position
-		returnTypes := make([]*ast.Ident, 0)
-		for _, result := range funcType.Results.List {
-			// Handle cases where multiple names share the same type (e.g., func f() (a, b int))
-			if len(result.Names) > 0 {
-				// Multiple names for this type
-				for range result.Names {
-					if typeIdent, ok := result.Type.(*ast.Ident); ok {
-						returnTypes = append(returnTypes, typeIdent)
-					} else {
-						returnTypes = append(returnTypes, nil)
-					}
-				}
-			} else {
-				// Single unnamed return type
-				if typeIdent, ok := result.Type.(*ast.Ident); ok {
-					returnTypes = append(returnTypes, typeIdent)
-				} else {
-					returnTypes = append(returnTypes, nil)
-				}
-			}
-		}
-
-		// Check each return value against its corresponding return type
-		for i, returnValue := range returnStmt.Results {
-			if i >= len(returnTypes) {
-				break // More return values than types (shouldn't happen in valid Go)
-			}
-
-			typeIdent := returnTypes[i]
-			if typeIdent == nil {
-				continue // Not an identifier type
-			}
-
-			// Check if the type is an enum type
-			enumValues, exists := enumTypes[typeIdent.Name]
-			if !exists || len(enumValues) == 0 {
-				continue // Not an enum type
-			}
-
-			// Check this specific return value against its corresponding enum type
-			checkReturnValue(pass, returnValue, enumValues, typeIdent.Name)
-		}
+		// Extract return types and validate enum return values
+		returnTypes := extractReturnTypes(funcType.Results.List)
+		validateEnumReturnValues(pass, returnStmt.Results, returnTypes, enumTypes)
 
 		return true
 	}
@@ -283,5 +243,57 @@ func checkVariableValue(pass *analysis.Pass, value ast.Expr, enumValues map[stri
 	case *ast.BasicLit:
 		// Any literal (string, int, etc.) is not allowed for enum types
 		pass.Reportf(value.Pos(), "variable '%s' assigned literal '%s' which is not a valid enum value for type %s", varName, v.Value, enumTypeName)
+	}
+}
+
+// extractReturnTypes builds a list of return types from function results,
+// handling both named and unnamed return parameters.
+func extractReturnTypes(resultsList []*ast.Field) []*ast.Ident {
+	var returnTypes []*ast.Ident
+
+	for _, result := range resultsList {
+		// Convert the type to an identifier if possible, otherwise nil
+		var typeIdent *ast.Ident
+		if ident, ok := result.Type.(*ast.Ident); ok {
+			typeIdent = ident
+		}
+
+		// Handle cases where multiple names share the same type (e.g., func f() (a, b int))
+		if len(result.Names) > 0 {
+			// Add the type for each named parameter
+			for range result.Names {
+				returnTypes = append(returnTypes, typeIdent)
+			}
+		} else {
+			// Single unnamed return type
+			returnTypes = append(returnTypes, typeIdent)
+		}
+	}
+
+	return returnTypes
+}
+
+// validateEnumReturnValues checks each return value against its corresponding return type
+// and reports violations when non-enum values are returned for enum types.
+func validateEnumReturnValues(pass *analysis.Pass, returnValues []ast.Expr, returnTypes []*ast.Ident, enumTypes map[string]map[string]bool) {
+	for i, returnValue := range returnValues {
+		// Ensure we don't go out of bounds (shouldn't happen in valid Go)
+		if i >= len(returnTypes) {
+			break
+		}
+
+		typeIdent := returnTypes[i]
+		if typeIdent == nil {
+			continue // Not an identifier type (e.g., interface{}, *int, etc.)
+		}
+
+		// Check if this return type is an enum type
+		enumValues, isEnumType := enumTypes[typeIdent.Name]
+		if !isEnumType || len(enumValues) == 0 {
+			continue // Not an enum type
+		}
+
+		// Validate this return value against the enum type
+		checkReturnValue(pass, returnValue, enumValues, typeIdent.Name)
 	}
 }
