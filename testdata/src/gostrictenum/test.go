@@ -1,3 +1,4 @@
+// nolint
 package main
 
 // Test cases for enum linter

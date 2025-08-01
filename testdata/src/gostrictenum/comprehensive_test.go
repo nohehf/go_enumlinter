@@ -1,4 +1,7 @@
+// nolint
 package main
+
+import "testdata/src/gostrictenum/externalpackage"
 
 // Comprehensive test cases for enum linter
 
@@ -43,6 +46,10 @@ func getEnabledFlag() Flag {
 
 func getValidColor() Color {
 	return ColorRed
+}
+
+func getExternalEnum() externalpackage.ExternalEnum {
+	return externalpackage.ExternalEnumA
 }
 
 // Invalid functions that should fail the linter
