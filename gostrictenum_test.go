@@ -14,7 +14,7 @@ func TestEnumLinter(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	testdata := filepath.Join(wd, "..", "..", "testdata")
+	testdata := filepath.Join(wd, "testdata")
 
 	// Create the required directory structure for analysistest
 	srcDir := filepath.Join(testdata, "src", "enumlinter")
