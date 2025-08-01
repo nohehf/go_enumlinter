@@ -26,9 +26,18 @@ const (
 type Color int
 
 const (
-	ColorRed   Color = iota
-	ColorGreen Color = iota
-	ColorBlue  Color = iota
+	ColorRed Color = iota
+	ColorGreen
+	ColorBlue
+)
+
+// Non exported enum
+type nonExportedEnum int
+
+const (
+	nonExportedEnumA nonExportedEnum = iota
+	nonExportedEnumB
+	nonExportedEnumC
 )
 
 type Wrapper struct {
@@ -52,6 +61,14 @@ func getExternalEnum() externalpackage.ExternalEnum {
 	return externalpackage.ExternalEnumA
 }
 
+func getNonExportedEnum() nonExportedEnum {
+	return nonExportedEnumA
+}
+
+func getMultipleReturnValuesValid() (Color, int) {
+	return ColorRed, 1
+}
+
 // Invalid functions that should fail the linter
 func getInvalidScore() Score {
 	return 1.0 // want "returning literal '1.0' which is not a valid enum value for type Score"
@@ -63,6 +80,14 @@ func getInvalidFlag() Flag {
 
 func getInvalidColor() Color {
 	return 5 // want "returning literal '5' which is not a valid enum value for type Color"
+}
+
+func getInvalidNonExportedEnum() nonExportedEnum {
+	return 1 // want "returning literal '1' which is not a valid enum value for type nonExportedEnum"
+}
+
+func getMultipleReturnValuesInvalid() (Color, int) {
+	return 1, 2 // want "returning literal '1' which is not a valid enum value for type Color"
 }
 
 // Test nested functions

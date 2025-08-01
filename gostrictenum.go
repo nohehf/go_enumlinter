@@ -158,21 +158,48 @@ func (f *GoStrictEnumLinter) run(pass *analysis.Pass) (interface{}, error) {
 			return true
 		}
 
-		// Get the type of the first result
-		typeIdent, ok := funcType.Results.List[0].Type.(*ast.Ident)
-		if !ok {
-			return true
+		// Build a list of return types to match with return values by position
+		returnTypes := make([]*ast.Ident, 0)
+		for _, result := range funcType.Results.List {
+			// Handle cases where multiple names share the same type (e.g., func f() (a, b int))
+			if len(result.Names) > 0 {
+				// Multiple names for this type
+				for range result.Names {
+					if typeIdent, ok := result.Type.(*ast.Ident); ok {
+						returnTypes = append(returnTypes, typeIdent)
+					} else {
+						returnTypes = append(returnTypes, nil)
+					}
+				}
+			} else {
+				// Single unnamed return type
+				if typeIdent, ok := result.Type.(*ast.Ident); ok {
+					returnTypes = append(returnTypes, typeIdent)
+				} else {
+					returnTypes = append(returnTypes, nil)
+				}
+			}
 		}
 
-		// Check if the type is an enum type
-		enumValues, exists := enumTypes[typeIdent.Name]
-		if !exists || len(enumValues) == 0 {
-			return true
-		}
+		// Check each return value against its corresponding return type
+		for i, returnValue := range returnStmt.Results {
+			if i >= len(returnTypes) {
+				break // More return values than types (shouldn't happen in valid Go)
+			}
 
-		// Check the return value
-		for _, result := range returnStmt.Results {
-			checkReturnValue(pass, result, enumValues, typeIdent.Name)
+			typeIdent := returnTypes[i]
+			if typeIdent == nil {
+				continue // Not an identifier type
+			}
+
+			// Check if the type is an enum type
+			enumValues, exists := enumTypes[typeIdent.Name]
+			if !exists || len(enumValues) == 0 {
+				continue // Not an enum type
+			}
+
+			// Check this specific return value against its corresponding enum type
+			checkReturnValue(pass, returnValue, enumValues, typeIdent.Name)
 		}
 
 		return true
@@ -230,17 +257,20 @@ func (f *GoStrictEnumLinter) run(pass *analysis.Pass) (interface{}, error) {
 	return nil, nil
 }
 
-func checkReturnValue(pass *analysis.Pass, result ast.Expr, enumValues map[string]bool, enumTypeName string) {
+func checkReturnValue(pass *analysis.Pass, result ast.Expr, enumValues map[string]bool, enumTypeName string) bool {
 	switch v := result.(type) {
 	case *ast.Ident:
 		// Check if it's a valid enum constant
 		if !enumValues[v.Name] {
 			pass.Reportf(result.Pos(), "returning '%s' which is not a valid enum value for type %s", v.Name, enumTypeName)
+			return false
 		}
 	case *ast.BasicLit:
 		// Any literal (string, int, etc.) is not allowed for enum types
 		pass.Reportf(result.Pos(), "returning literal '%s' which is not a valid enum value for type %s", v.Value, enumTypeName)
+		return false
 	}
+	return true
 }
 
 func checkVariableValue(pass *analysis.Pass, value ast.Expr, enumValues map[string]bool, enumTypeName string, varName string) {
