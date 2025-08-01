@@ -1,4 +1,4 @@
-module github.com/0ri0nexe/gostrictenum
+module github.com/nohehf/gostrictenum
 
 go 1.24.5
 

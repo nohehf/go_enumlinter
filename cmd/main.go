@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/0ri0nexe/gostrictenum"
+	"github.com/nohehf/gostrictenum"
 	"golang.org/x/tools/go/analysis/singlechecker"
 )
 
