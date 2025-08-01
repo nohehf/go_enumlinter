@@ -29,6 +29,7 @@ const (
 	ColorRed Color = iota
 	ColorGreen
 	ColorBlue
+	ColorBlack Color = 4
 )
 
 // Non exported enum
@@ -53,8 +54,20 @@ func getEnabledFlag() Flag {
 	return FlagEnabled
 }
 
-func getValidColor() Color {
+func getRedColor() Color {
 	return ColorRed
+}
+
+func getGreenColor() Color {
+	return ColorGreen
+}
+
+func getBlueColor() Color {
+	return ColorBlue
+}
+
+func getBlackColor() Color {
+	return ColorBlack
 }
 
 func getExternalEnum() externalpackage.ExternalEnum {

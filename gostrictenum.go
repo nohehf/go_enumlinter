@@ -80,39 +80,12 @@ func (f *GoStrictEnumLinter) run(pass *analysis.Pass) (interface{}, error) {
 
 	// Second pass: collect constants and identify enum types
 	inspectConsts := func(node ast.Node) bool {
-
-		// Check if the declaration is a `const`
 		genDecl, ok := node.(*ast.GenDecl)
 		if !ok || genDecl.Tok != token.CONST {
 			return true
 		}
 
-		// Collect all constants
-		for _, spec := range genDecl.Specs {
-			valueSpec, ok := spec.(*ast.ValueSpec)
-			if !ok {
-				continue
-			}
-
-			// Check if the constant has a type annotation
-			typeIdent, ok := valueSpec.Type.(*ast.Ident)
-			if !ok {
-				continue
-			}
-
-			// If this type exists in our type declarations, it might be an enum
-			if _, exists := typeDecls[typeIdent.Name]; exists {
-				// Initialize the enum values map if it doesn't exist
-				if enumTypes[typeIdent.Name] == nil {
-					enumTypes[typeIdent.Name] = make(map[string]bool)
-				}
-
-				// Add all constants in this spec to the enum values
-				for _, name := range valueSpec.Names {
-					enumTypes[typeIdent.Name][name.Name] = true
-				}
-			}
-		}
+		collectEnumConstantsFromBlock(genDecl, typeDecls, enumTypes)
 		return true
 	}
 
@@ -295,5 +268,57 @@ func validateEnumReturnValues(pass *analysis.Pass, returnValues []ast.Expr, retu
 
 		// Validate this return value against the enum type
 		checkReturnValue(pass, returnValue, enumValues, typeIdent.Name)
+	}
+}
+
+// collectEnumConstantsFromBlock processes a const block and collects enum constants,
+// handling both explicit type annotations and inherited types (iota pattern).
+func collectEnumConstantsFromBlock(constDecl *ast.GenDecl, typeDecls map[string]*ast.TypeSpec, enumTypes map[string]map[string]bool) {
+	var activeEnumType string
+
+	for _, spec := range constDecl.Specs {
+		valueSpec, ok := spec.(*ast.ValueSpec)
+		if !ok {
+			continue
+		}
+
+		// Check if this constant spec has an explicit type
+		if valueSpec.Type != nil {
+			activeEnumType = determineActiveEnumType(valueSpec.Type, typeDecls)
+		}
+		// If no explicit type, the activeEnumType continues from previous spec (iota pattern)
+
+		// Register constants for the active enum type
+		if activeEnumType != "" {
+			registerEnumConstants(activeEnumType, valueSpec.Names, enumTypes)
+		}
+	}
+}
+
+// determineActiveEnumType checks if the given type is a declared enum type
+// and returns the enum type name, or empty string if not an enum.
+func determineActiveEnumType(typeExpr ast.Expr, typeDecls map[string]*ast.TypeSpec) string {
+	typeIdent, ok := typeExpr.(*ast.Ident)
+	if !ok {
+		return "" // Not an identifier type
+	}
+
+	if _, exists := typeDecls[typeIdent.Name]; exists {
+		return typeIdent.Name // This is a declared enum type
+	}
+
+	return "" // Not a declared type
+}
+
+// registerEnumConstants adds the given constant names to the specified enum type.
+func registerEnumConstants(enumTypeName string, constNames []*ast.Ident, enumTypes map[string]map[string]bool) {
+	// Initialize the enum values map if it doesn't exist
+	if enumTypes[enumTypeName] == nil {
+		enumTypes[enumTypeName] = make(map[string]bool)
+	}
+
+	// Add all constants to the enum type
+	for _, name := range constNames {
+		enumTypes[enumTypeName][name.Name] = true
 	}
 }
